@@ -229,3 +229,53 @@ http://127.0.0.1:8000/docs
 # Authors
 
 - Akshitha Merugu
+
+
+# Day 2 — Frontend UI Skeleton, Tailwind & Audio Recording
+
+## What I did today:
+
+### Frontend UI & Tailwind
+- Installed and configured Tailwind CSS
+- Added Tailwind setup files and global styles
+- Created reusable UI components:
+  - Header
+  - RecorderPanel
+  - TranscriptPanel
+
+### Static Pages
+- Built main recorder page (`/`)
+- Built history page (`/history`)
+
+### Transcript State
+- Added React state for transcript placeholder
+- Added start/stop recording buttons
+- Added empty transcript display area
+
+### Client-side Audio Recording
+- Implemented microphone permission request using:
+  ```js
+  navigator.mediaDevices.getUserMedia({ audio: true })
+  ```
+
+- Implemented MediaRecorder API for recording audio
+- Captured audio chunks during recording
+- Combined chunks into a Blob on stop
+- Added recording state indicator
+- Added recording timer
+- Added audio playback functionality
+- Added download recorded audio feature
+
+---
+
+## Deliverables Achieved
+- Clickable frontend UI mockup
+- Working Start/Stop recording
+- Empty transcript area
+- Audio Blob generation
+- Download and local playback support
+
+---
+
+## Goal
+Build frontend UI and implement client-side audio recording functionality using MediaRecorder API.
