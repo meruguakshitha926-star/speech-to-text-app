@@ -279,3 +279,45 @@ http://127.0.0.1:8000/docs
 
 ## Goal
 Build frontend UI and implement client-side audio recording functionality using MediaRecorder API.
+
+
+# Day 3 — FastAPI Backend: Audio Upload Endpoint
+
+## What I did today:
+
+### Backend Setup (FastAPI)
+- Created FastAPI application skeleton
+- Configured backend server using `uvicorn`
+- Installed required dependency: `python-multipart` for file uploads
+- Prepared backend for handling frontend audio uploads
+
+---
+
+### CORS Setup
+- Enabled CORS to allow frontend communication
+- Configured middleware for cross-origin requests
+
+---
+
+### API Endpoint Implementation
+
+#### POST `/transcribe`
+
+- Implemented `/transcribe` endpoint in FastAPI
+- Accepts audio file using `UploadFile`
+- Receives file via `multipart/form-data`
+- Reads uploaded file from request
+- Saves file temporarily in `uploads/` folder
+
+---
+
+### File Handling
+- Used FastAPI `UploadFile` to handle uploads
+- Saved file using binary write mode
+- Stored file with original filename for testing
+
+Example logic:
+```python
+contents = await file.read()
+with open(file_path, "wb") as f:
+    f.write(contents)
