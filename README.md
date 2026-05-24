@@ -340,7 +340,7 @@ Audio file upload working via multipart form
 File successfully saved locally
 API tested successfully
 
-# Speech-to-Text App — Day 4
+Speech-to-Text App — Day 4
 
 ## Integrate Speech-to-Text Provider (Proof of Concept)
 
@@ -392,4 +392,106 @@ backend/
 │   └── audio_utils.py
 │
 └── requirements.txt
+Features Implemented
+Audio Upload API
 
+Users can upload:
+
+.wav
+.mp3
+.m4a
+
+files through the /transcribe endpoint.
+
+Audio Conversion
+
+Uploaded files are converted into:
+
+WAV format
+16kHz sample rate
+Mono channel
+
+using FFmpeg for better STT compatibility.
+
+Real Speech-to-Text
+
+Audio is sent to Deepgram API and real transcript text is returned.
+
+API Endpoint
+POST /transcribe
+
+Uploads an audio file and returns transcript text.
+
+Example API Response
+{
+  "status": "ok",
+  "filename": "voice.mp3.m4a",
+  "transcript": "Hello, this is a speech-to-text demo."
+}
+Environment Variables
+
+Create a .env file inside backend/
+
+DEEPGRAM_API_KEY=your_api_key
+Installation
+1. Clone Repository
+git clone <your_repo_url>
+cd speech-to-text-app
+2. Create Virtual Environment
+python -m venv venv
+
+Activate environment:
+
+Windows
+venv\Scripts\activate
+3. Install Dependencies
+pip install -r requirements.txt
+4. Install FFmpeg
+
+Download and install FFmpeg.
+
+Add FFmpeg bin folder to system PATH.
+
+Verify installation:
+
+ffmpeg -version
+Run Backend Server
+uvicorn main:app --reload
+
+Server runs at:
+
+http://127.0.0.1:8000
+Swagger Documentation
+
+Open:
+
+http://127.0.0.1:8000/docs
+
+Upload audio file and test transcription API directly.
+
+Workflow
+Upload Audio
+      ↓
+Save File
+      ↓
+Convert to WAV
+      ↓
+Send to Deepgram API
+      ↓
+Receive Transcript
+      ↓
+Return JSON Response
+Deliverable Status
+Requirement	Status
+STT Provider Integration	✅ Completed
+API Key Configuration	✅ Completed
+Audio Upload	✅ Completed
+WAV Conversion	✅ Completed
+Real Transcript Response	✅ Completed
+/transcribe Endpoint	✅ Completed
+Sample Output
+{
+  "status": "ok",
+  "filename": "voice.mp3.m4a",
+  "transcript": "LCLM move these are working this. So, like, what is LCLM thing? Yes."
+}
