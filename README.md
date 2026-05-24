@@ -321,3 +321,75 @@ Example logic:
 contents = await file.read()
 with open(file_path, "wb") as f:
     f.write(contents)
+
+Testing:
+
+Tested API using:
+curl command
+Postman
+
+Verified:
+Audio file uploads successfully
+File saved in backend folder (uploads/)
+Correct JSON response returned
+Deliverables Achieved
+FastAPI backend server setup
+CORS enabled
+/transcribe POST endpoint working
+Audio file upload working via multipart form
+File successfully saved locally
+API tested successfully
+
+# Speech-to-Text App — Day 4
+
+## Integrate Speech-to-Text Provider (Proof of Concept)
+
+This project implements a working Speech-to-Text (STT) backend using FastAPI and Deepgram API.  
+The application accepts uploaded audio files, converts them into a compatible WAV format, sends them to the STT provider, and returns the generated transcript.
+
+---
+
+# Goals Completed
+
+- Integrated a Speech-to-Text provider (Deepgram)
+- Added API key securely using `.env`
+- Uploaded audio files through FastAPI
+- Converted audio into WAV format using FFmpeg
+- Sent audio to STT API
+- Returned real transcript text from `/transcribe`
+
+---
+
+# Tech Stack
+
+## Backend
+- Python
+- FastAPI
+- Uvicorn
+
+## Speech-to-Text Provider
+- Deepgram API
+
+## Audio Processing
+- FFmpeg
+
+## Environment Management
+- python-dotenv
+
+---
+
+# Project Structure
+
+```bash
+backend/
+│
+├── main.py
+├── .env
+├── uploads/
+│
+├── services/
+│   ├── stt_service.py
+│   └── audio_utils.py
+│
+└── requirements.txt
+
