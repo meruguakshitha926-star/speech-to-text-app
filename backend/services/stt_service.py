@@ -18,8 +18,12 @@ def transcribe_audio(file_path):
     }
 
     options = PrerecordedOptions(
-        model="nova-2",
-        smart_format=True
+    model="nova-2",
+    smart_format=True,
+    detect_language=True,
+    punctuate=True
+
+
     )
 
     response = deepgram.listen.prerecorded.v("1").transcribe_file(

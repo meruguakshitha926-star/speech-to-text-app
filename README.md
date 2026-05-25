@@ -340,7 +340,7 @@ Audio file upload working via multipart form
 File successfully saved locally
 API tested successfully
 
-Speech-to-Text App — Day 4
+ Day 4— FastAPI Backend: Audio Upload Endpoint
 
 ## Integrate Speech-to-Text Provider (Proof of Concept)
 
@@ -494,4 +494,91 @@ Sample Output
   "status": "ok",
   "filename": "voice.mp3.m4a",
   "transcript": "LCLM move these are working this. So, like, what is LCLM thing? Yes."
+}
+
+
+# 📘 Day 5 — End-to-End Frontend Integration with Improved Audio Handling & STT Compatibility
+
+## 🎤 Speech-to-Text Full Pipeline Integration
+
+This project completes the full **end-to-end Speech-to-Text workflow** by connecting the frontend audio recorder with the FastAPI backend.  
+Audio recorded in the browser is uploaded to the backend, processed for STT compatibility, and converted into text using a Speech-to-Text provider.
+
+---
+
+# 🎯 Goals Completed
+
+- Integrated frontend with backend `/transcribe` API
+- Converted recorded **audio Blob → File** using `FormData`
+- Sent audio using `fetch` API
+- Displayed real transcript in UI
+- Added loading state during transcription request
+- Completed full flow: record → upload → transcribe → display
+
+---
+
+# 🎧 Improve Audio Handling & STT Compatibility
+
+This phase improves audio reliability and ensures compatibility with Speech-to-Text systems.
+
+### ⚙️ Improvements Implemented
+- Converted audio to **WAV format**
+- Standardized audio to:
+  - 16kHz sample rate
+  - Mono channel
+- Backend audio normalization using FFmpeg / pydub
+- Improved compatibility with STT providers (Deepgram / Whisper)
+
+---
+
+# 🧠 Backend Audio Processing
+
+```python
+from pydub import AudioSegment
+
+audio = AudioSegment.from_file(path)
+audio = audio.set_frame_rate(16000).set_channels(1)
+audio.export("processed.wav", format="wav")
+
+
+🌐 Frontend Upload Implementation
+const form = new FormData();
+form.append("file", recordedFile, "speech.webm");
+
+const res = await fetch(process.env.NEXT_PUBLIC_API + "/transcribe", {
+  method: "POST",
+  body: form,
+});
+
+const data = await res.json();
+setTranscript(data.transcript);
+🔄 End-to-End Workflow
+
+Record Audio (Browser)
+↓
+Convert Blob → File
+↓
+Send via FormData (Frontend)
+↓
+FastAPI /transcribe Endpoint
+↓
+Audio Conversion (WAV, 16kHz, mono)
+↓
+Speech-to-Text Processing (Deepgram / STT API)
+↓
+Return Transcript
+↓
+Display in UI
+
+📦 API Endpoint
+POST /transcribe
+
+Request:
+
+file: audio.webm
+
+Response:
+
+{
+  "transcript": "Hello, this is the converted speech text."
 }

@@ -2,90 +2,151 @@
 
 import { useEffect, useRef, useState } from "react";
 
-export default function RecorderPanel() {
-  const [isRecording, setIsRecording] = useState(false);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+type Props = {
+  onRecordingComplete: (blob: Blob) => void;
+};
+
+export default function RecorderPanel({
+  onRecordingComplete,
+}: Props) {
+  const [isRecording, setIsRecording] =
+    useState(false);
+
+  const [audioUrl, setAudioUrl] =
+    useState<string | null>(null);
+
   const [time, setTime] = useState(0);
 
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaRecorderRef =
+    useRef<MediaRecorder | null>(null);
+
   const chunksRef = useRef<BlobPart[]>([]);
-  const streamRef = useRef<MediaStream | null>(null);
+
+  const streamRef =
+    useRef<MediaStream | null>(null);
 
   // 🎤 START RECORDING
   const startRecording = async () => {
     try {
-      // Request microphone access
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-      });
+      // Ask microphone permission
+      const stream =
+        await navigator.mediaDevices.getUserMedia(
+          {
+            audio: true,
+          }
+        );
 
-      console.log("Audio Tracks:", stream.getAudioTracks());
-
-      // Save stream reference
       streamRef.current = stream;
 
-      // Create MediaRecorder safely
+      // Create recorder
       let mediaRecorder: MediaRecorder;
 
-      if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
-        mediaRecorder = new MediaRecorder(stream, {
-          mimeType: "audio/webm;codecs=opus",
-        });
+      if (
+        MediaRecorder.isTypeSupported(
+          "audio/webm;codecs=opus"
+        )
+      ) {
+        mediaRecorder = new MediaRecorder(
+          stream,
+          {
+            mimeType:
+              "audio/webm;codecs=opus",
+          }
+        );
       } else {
-        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder = new MediaRecorder(
+          stream
+        );
       }
 
-      mediaRecorderRef.current = mediaRecorder;
+      mediaRecorderRef.current =
+        mediaRecorder;
 
       // Reset chunks
       chunksRef.current = [];
 
-      // Capture audio chunks
-      mediaRecorder.ondataavailable = (event) => {
-        console.log("Chunk Size:", event.data.size);
+      // Save chunks
+      mediaRecorder.ondataavailable = (
+  event
+) => {
 
-        if (event.data.size > 0) {
-          chunksRef.current.push(event.data);
-        }
-      };
+  if (event.data.size > 0) {
 
-      // When recording stops
+    console.log(
+      "Chunk received:",
+      event.data.size
+    );
+
+    // Store chunk
+    chunksRef.current.push(
+      event.data
+    );
+
+    // Create temporary chunk blob
+    const chunkBlob = new Blob(
+      [event.data],
+      {
+        type: "audio/webm",
+      }
+    );
+
+    console.log(
+      "Chunk Blob:",
+      chunkBlob
+    );
+  }
+};
+
+      // When stop recording
       mediaRecorder.onstop = () => {
-        console.log("Total Chunks:", chunksRef.current);
+        const audioBlob = new Blob(
+          chunksRef.current,
+          {
+            type: "audio/webm",
+          }
+        );
 
-        const audioBlob = new Blob(chunksRef.current, {
-          type: "audio/webm",
-        });
-
-        console.log("Blob Size:", audioBlob.size);
+        console.log(
+          "Blob Size:",
+          audioBlob.size
+        );
 
         // Create playable URL
-        const url = URL.createObjectURL(audioBlob);
+        const url =
+          URL.createObjectURL(audioBlob);
 
         setAudioUrl(url);
+
+        // Send blob to parent
+        onRecordingComplete(audioBlob);
       };
 
       // Start recording
-      // 1000ms ensures chunks are flushed properly
       mediaRecorder.start(1000);
 
       setIsRecording(true);
 
     } catch (error) {
-      console.error("Microphone Error:", error);
-      alert("Microphone permission denied or unavailable.");
+      console.error(
+        "Microphone Error:",
+        error
+      );
+
+      alert(
+        "Microphone permission denied."
+      );
     }
   };
 
   // ⏹ STOP RECORDING
   const stopRecording = () => {
-    // Stop recorder
     mediaRecorderRef.current?.stop();
 
-    // Stop microphone tracks
-    streamRef.current?.getTracks().forEach((track) => {
-      track.stop();
-    });
+    streamRef.current
+      ?.getTracks()
+      .forEach((track) =>
+        track.stop()
+      );
 
     setIsRecording(false);
   };
@@ -94,9 +155,12 @@ export default function RecorderPanel() {
   const downloadAudio = () => {
     if (!audioUrl) return;
 
-    const a = document.createElement("a");
+    const a =
+      document.createElement("a");
+
     a.href = audioUrl;
     a.download = "recording.webm";
+
     a.click();
   };
 
@@ -112,15 +176,19 @@ export default function RecorderPanel() {
       setTime(0);
     }
 
-    return () => clearInterval(interval);
+    return () =>
+      clearInterval(interval);
+
   }, [isRecording]);
 
   return (
-    <div className="p-6 border rounded-xl shadow-md flex flex-col gap-4 bg-white">
+    <div className="p-6 border rounded-xl shadow-md bg-white flex flex-col gap-4">
 
-      {/* TIMER + STATUS */}
+      {/* TIMER */}
       <div className="text-lg font-semibold">
-        ⏱ {time}s {isRecording && "🔴 Recording..."}
+        ⏱ {time}s{" "}
+        {isRecording &&
+          "🔴 Recording..."}
       </div>
 
       {/* BUTTONS */}
@@ -159,13 +227,20 @@ export default function RecorderPanel() {
             🎵 Recorded Audio:
           </p>
 
-          <audio controls className="w-full">
-            <source src={audioUrl} type="audio/webm" />
-            Your browser does not support audio playback.
+          <audio
+            controls
+            className="w-full"
+          >
+            <source
+              src={audioUrl}
+              type="audio/webm"
+            />
+
+            Your browser does not support
+            audio playback.
           </audio>
         </div>
       )}
-
     </div>
   );
 }
