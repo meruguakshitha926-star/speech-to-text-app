@@ -8,29 +8,22 @@ import TranscriptPanel from "../components/TranscriptPanel";
 export default function Home() {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
+  const [partialText, setPartialText] = useState("");
 
-  // Receive audio blob from RecorderPanel
-  const handleRecordingComplete = async (
-    audioBlob: Blob
-  ) => {
+  // Transcribe full uploaded audio as usual
+  const handleRecordingComplete = async (audioBlob: Blob) => {
     try {
       setLoading(true);
-      setText("Uploading audio...");
+      setText("Uploading full audio...");
+      setPartialText(""); // clear partials
 
-      // Convert Blob → File
-      const audioFile = new File(
-        [audioBlob],
-        "speech.webm",
-        {
-          type: "audio/webm",
-        }
-      );
+      const audioFile = new File([audioBlob], "speech.webm", {
+        type: "audio/webm",
+      });
 
-      // Create FormData
       const formData = new FormData();
       formData.append("file", audioFile);
 
-      // Send audio to backend
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API}/transcribe`,
         {
@@ -40,8 +33,6 @@ export default function Home() {
       );
 
       const data = await response.json();
-
-      // Show transcript
       setText(data.transcript);
 
     } catch (error) {
@@ -52,23 +43,28 @@ export default function Home() {
     }
   };
 
+  const currentTranscript = loading ? "Transcribing..." : text + (partialText ? ((text ? " " : "") + partialText) : "");
+
   return (
     <div className="min-h-screen bg-gray-100">
       <Header />
 
       <div className="max-w-3xl mx-auto p-6">
         <RecorderPanel
-          onRecordingComplete={
-            handleRecordingComplete
-          }
+          onRecordingComplete={handleRecordingComplete}
+          onPartialTranscript={(partial, isFinal) => {
+            if (isFinal) {
+              setText((prev) => prev + " " + partial);
+              setPartialText("");
+            } else {
+              setPartialText(partial);
+            }
+          }}
+          onStreamStart={() => setText("")}
         />
 
         <TranscriptPanel
-          text={
-            loading
-              ? "Transcribing..."
-              : text
-          }
+          text={currentTranscript}
         />
       </div>
     </div>

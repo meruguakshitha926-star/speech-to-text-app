@@ -582,3 +582,121 @@ Response:
 {
   "transcript": "Hello, this is the converted speech text."
 }
+
+
+# Day-6: Real-time Streaming / Partial Transcripts (Chunking)
+
+## Overview
+
+This phase introduces real-time audio streaming using WebSockets for lower-latency Speech-to-Text processing.
+
+Instead of waiting until recording completes, the frontend now sends small audio chunks continuously to the backend while recording is in progress. The backend processes these chunks and returns partial/live transcript updates.
+
+This improves responsiveness and creates a more real-time transcription experience.
+
+---
+
+# Features Implemented
+
+## Real-time Audio Streaming
+
+Implemented live audio chunk streaming from frontend to backend using WebSockets.
+
+- Small audio chunks are generated continuously using MediaRecorder.
+- Chunks are sent instantly to the FastAPI backend.
+- Enables lower latency transcription workflow.
+
+---
+
+## WebSocket Integration
+
+Integrated WebSocket communication between:
+
+- React frontend
+- FastAPI backend
+
+This allows bidirectional communication for:
+
+- Sending audio chunks
+- Receiving partial transcript updates
+
+---
+
+## Partial Transcript Updates
+
+Implemented live transcript updates while recording is active.
+
+- Backend emits partial transcript responses
+- Frontend updates transcript panel dynamically
+- Users can see transcript generation in real-time
+
+---
+
+## Chunk-based Audio Processing
+
+Audio is divided into smaller chunks for faster processing.
+
+Benefits:
+
+- Reduced waiting time
+- Faster feedback loop
+- Improved streaming architecture
+
+---
+
+## Frontend Enhancements
+
+Implemented:
+
+- WebSocket connection handling
+- Audio chunk transmission
+- Live transcript rendering
+- Real-time recording state updates
+
+---
+
+## Backend Enhancements
+
+Implemented:
+
+- FastAPI WebSocket endpoint
+- Audio chunk receiving
+- Real-time processing flow
+- Partial transcript emission to frontend
+
+---
+
+# Technologies Used
+
+## Frontend
+
+- React
+- TypeScript
+- MediaRecorder API
+- WebSocket API
+
+## Backend
+
+- FastAPI
+- WebSockets / fastapi-socketio
+- Python
+
+---
+
+# Workflow
+
+1. User starts recording
+2. MediaRecorder generates small audio chunks
+3. Frontend sends chunks via WebSocket
+4. Backend receives audio chunks
+5. Backend processes/transcribes chunks
+6. Partial transcript is emitted back
+7. Frontend updates transcript live
+
+---
+
+# Outcome
+
+Successfully implemented a real-time streaming architecture with live partial transcript updates during recording.
+
+This phase improves the responsiveness and scalability of the Speech-to-Text application and simulates real-world streaming transcription systems.

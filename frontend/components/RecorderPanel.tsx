@@ -4,170 +4,130 @@ import { useEffect, useRef, useState } from "react";
 
 type Props = {
   onRecordingComplete: (blob: Blob) => void;
+  onPartialTranscript?: (text: string, isFinal: boolean) => void;
+  onStreamStart?: () => void;
 };
 
 export default function RecorderPanel({
   onRecordingComplete,
+  onPartialTranscript,
+  onStreamStart,
 }: Props) {
-  const [isRecording, setIsRecording] =
-    useState(false);
-
-  const [audioUrl, setAudioUrl] =
-    useState<string | null>(null);
-
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [time, setTime] = useState(0);
 
-  const mediaRecorderRef =
-    useRef<MediaRecorder | null>(null);
-
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
-
-  const streamRef =
-    useRef<MediaStream | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
 
   // 🎤 START RECORDING
   const startRecording = async () => {
     try {
+      if (onStreamStart) onStreamStart();
+
       // Ask microphone permission
-      const stream =
-        await navigator.mediaDevices.getUserMedia(
-          {
-            audio: true,
-          }
-        );
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
 
       streamRef.current = stream;
 
-      // Create recorder
-      let mediaRecorder: MediaRecorder;
+      // Create recorder function
+      const setupAndStartRecorder = () => {
+        let mediaRecorder: MediaRecorder;
+        if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
+          mediaRecorder = new MediaRecorder(stream, {
+            mimeType: "audio/webm;codecs=opus",
+          });
+        } else {
+          mediaRecorder = new MediaRecorder(stream);
+        }
 
-      if (
-        MediaRecorder.isTypeSupported(
-          "audio/webm;codecs=opus"
-        )
-      ) {
-        mediaRecorder = new MediaRecorder(
-          stream,
-          {
-            mimeType:
-              "audio/webm;codecs=opus",
+        mediaRecorderRef.current = mediaRecorder;
+        chunksRef.current = [];
+
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            chunksRef.current.push(event.data);
+            if (wsRef.current?.readyState === WebSocket.OPEN) {
+              wsRef.current.send(event.data);
+            }
           }
-        );
-      } else {
-        mediaRecorder = new MediaRecorder(
-          stream
-        );
-      }
+        };
 
-      mediaRecorderRef.current =
-        mediaRecorder;
-
-      // Reset chunks
-      chunksRef.current = [];
-
-      // Save chunks
-      mediaRecorder.ondataavailable = (
-  event
-) => {
-
-  if (event.data.size > 0) {
-
-    console.log(
-      "Chunk received:",
-      event.data.size
-    );
-
-    // Store chunk
-    chunksRef.current.push(
-      event.data
-    );
-
-    // Create temporary chunk blob
-    const chunkBlob = new Blob(
-      [event.data],
-      {
-        type: "audio/webm",
-      }
-    );
-
-    console.log(
-      "Chunk Blob:",
-      chunkBlob
-    );
-  }
-};
-
-      // When stop recording
-      mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(
-          chunksRef.current,
-          {
-            type: "audio/webm",
+        mediaRecorder.onstop = () => {
+          const audioBlob = new Blob(chunksRef.current, { type: "audio/webm" });
+          if (wsRef.current) {
+              wsRef.current.close();
+              wsRef.current = null;
           }
-        );
+          const url = URL.createObjectURL(audioBlob);
+          setAudioUrl(url);
+          onRecordingComplete(audioBlob);
+        };
 
-        console.log(
-          "Blob Size:",
-          audioBlob.size
-        );
-
-        // Create playable URL
-        const url =
-          URL.createObjectURL(audioBlob);
-
-        setAudioUrl(url);
-
-        // Send blob to parent
-        onRecordingComplete(audioBlob);
+        mediaRecorder.start(250);
+        setIsRecording(true);
       };
 
-      // Start recording
-      mediaRecorder.start(1000);
+      // Connect WebSocket if streaming
+      const wsUrl = process.env.NEXT_PUBLIC_API?.replace("http", "ws")?.replace("https", "wss") + "/stream";
+      if (wsUrl && !wsUrl.includes("undefined")) {
+          wsRef.current = new WebSocket(wsUrl);
+          
+          wsRef.current.onopen = () => {
+              console.log("WebSocket connected for streaming.");
+              setupAndStartRecorder();
+          };
 
-      setIsRecording(true);
+          wsRef.current.onerror = (e) => {
+              console.error("WebSocket Error: ", e);
+              // Fallback: start anyway if WS fails to connect
+              if (!isRecording) setupAndStartRecorder();
+          };
+
+          wsRef.current.onmessage = (event) => {
+              console.log("LIVE MESSAGE:", event.data);
+              try {
+                  const data = JSON.parse(event.data);
+                  if (onPartialTranscript) {
+                      onPartialTranscript(data.transcript, data.is_final);
+                  }
+              } catch(e) {
+                  console.error(e);
+              }
+          };
+      } else {
+         setupAndStartRecorder();
+      }
 
     } catch (error) {
-      console.error(
-        "Microphone Error:",
-        error
-      );
-
-      alert(
-        "Microphone permission denied."
-      );
+      console.error("Microphone Error:", error);
+      alert("Microphone permission denied.");
     }
   };
 
   // ⏹ STOP RECORDING
   const stopRecording = () => {
     mediaRecorderRef.current?.stop();
-
-    streamRef.current
-      ?.getTracks()
-      .forEach((track) =>
-        track.stop()
-      );
-
+    streamRef.current?.getTracks().forEach((track) => track.stop());
     setIsRecording(false);
   };
 
   // 📥 DOWNLOAD AUDIO
   const downloadAudio = () => {
     if (!audioUrl) return;
-
-    const a =
-      document.createElement("a");
-
+    const a = document.createElement("a");
     a.href = audioUrl;
     a.download = "recording.webm";
-
     a.click();
   };
 
   // ⏱ TIMER
   useEffect(() => {
     let interval: NodeJS.Timeout;
-
     if (isRecording) {
       interval = setInterval(() => {
         setTime((prev) => prev + 1);
@@ -175,25 +135,18 @@ export default function RecorderPanel({
     } else {
       setTime(0);
     }
-
-    return () =>
-      clearInterval(interval);
-
+    return () => clearInterval(interval);
   }, [isRecording]);
 
   return (
     <div className="p-6 border rounded-xl shadow-md bg-white flex flex-col gap-4">
-
       {/* TIMER */}
       <div className="text-lg font-semibold">
-        ⏱ {time}s{" "}
-        {isRecording &&
-          "🔴 Recording..."}
+        ⏱ {time}s {isRecording && "🔴 Recording..."}
       </div>
 
       {/* BUTTONS */}
       <div className="flex gap-3 flex-wrap">
-
         <button
           onClick={startRecording}
           disabled={isRecording}
@@ -217,27 +170,15 @@ export default function RecorderPanel({
         >
           Download
         </button>
-
       </div>
 
       {/* AUDIO PLAYER */}
       {audioUrl && (
         <div className="mt-4">
-          <p className="font-medium mb-2">
-            🎵 Recorded Audio:
-          </p>
-
-          <audio
-            controls
-            className="w-full"
-          >
-            <source
-              src={audioUrl}
-              type="audio/webm"
-            />
-
-            Your browser does not support
-            audio playback.
+          <p className="font-medium mb-2">🎵 Recorded Audio (Full):</p>
+          <audio controls className="w-full">
+            <source src={audioUrl} type="audio/webm" />
+            Your browser does not support audio playback.
           </audio>
         </div>
       )}
