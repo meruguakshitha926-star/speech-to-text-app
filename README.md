@@ -700,3 +700,77 @@ Implemented:
 Successfully implemented a real-time streaming architecture with live partial transcript updates during recording.
 
 This phase improves the responsiveness and scalability of the Speech-to-Text application and simulates real-world streaming transcription systems.
+
+
+# 🎙️ Speech-to-Text App — Day 7 Progress
+
+---
+
+## 📌 Persist Transcripts & Build History UI
+
+### 🎯 Goal
+Save transcripts to database and display them in a history page.
+
+### 🛠️ What I did
+- Chose database: **PostgreSQL / Supabase**
+- Created transcripts table with schema:
+  - id, user_id (nullable), text, created_at, duration_seconds, filename, language
+- Built backend APIs:
+  - `GET /transcripts`
+  - `GET /transcripts/{id}`
+- Developed `/history` UI page to list all saved transcripts
+- Added open/download functionality for each transcript
+
+### ✅ Result
+Transcripts are now stored in the database and visible in the history page.
+
+---
+
+## 🔐 Authentication & Multi-user Support
+
+### 🎯 Goal
+Allow users to sign in and store private transcripts.
+
+### 🛠️ What I did
+- Implemented authentication using **Supabase Auth / JWT (PyJWT)**
+- Attached `user_id` to each transcript
+- Secured upload endpoint with authentication
+- Protected `/history` route for logged-in users only
+
+### ✅ Result
+Each user can now access only their own transcripts.
+
+---
+
+## 🎨 UI Polish & Export Features
+
+### 🎯 Goal
+Improve UI and add export options.
+
+### 🛠️ What I did
+- Added transcript utilities:
+  - Copy transcript
+  - Download as `.txt`
+  - (Optional) Download as `.docx`
+  - Share transcript link
+- Improved UI responsiveness and layout
+- Added accessibility improvements:
+  - aria-labels
+  - keyboard navigation support
+- Enhanced transcript display with better formatting
+
+### ✅ Result
+App is now more user-friendly, responsive, and feature-rich.
+
+---
+
+## 🚀 Final Outcome
+
+- 🎧 Audio upload → transcription working  
+- 💾 Transcripts stored in database  
+- 📜 History page functional  
+- 🔐 Authentication added  
+- 📤 Export features implemented  
+- 🎨 UI improved and polished  
+
+---

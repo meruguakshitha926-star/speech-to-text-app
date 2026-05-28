@@ -3,12 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 
 type Props = {
-  onRecordingComplete: (blob: Blob) => void;
+  language: string;
+  onRecordingComplete: (blob: Blob, durationSeconds: number) => void;
   onPartialTranscript?: (text: string, isFinal: boolean) => void;
   onStreamStart?: () => void;
 };
 
 export default function RecorderPanel({
+  language,
   onRecordingComplete,
   onPartialTranscript,
   onStreamStart,
@@ -21,20 +23,15 @@ export default function RecorderPanel({
   const chunksRef = useRef<BlobPart[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const durationRef = useRef(0);
 
-  // 🎤 START RECORDING
   const startRecording = async () => {
     try {
       if (onStreamStart) onStreamStart();
 
-      // Ask microphone permission
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-      });
-
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
 
-      // Create recorder function
       const setupAndStartRecorder = () => {
         let mediaRecorder: MediaRecorder;
         if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
@@ -60,63 +57,60 @@ export default function RecorderPanel({
         mediaRecorder.onstop = () => {
           const audioBlob = new Blob(chunksRef.current, { type: "audio/webm" });
           if (wsRef.current) {
-              wsRef.current.close();
-              wsRef.current = null;
+            wsRef.current.close();
+            wsRef.current = null;
           }
           const url = URL.createObjectURL(audioBlob);
           setAudioUrl(url);
-          onRecordingComplete(audioBlob);
+          onRecordingComplete(audioBlob, durationRef.current);
         };
 
         mediaRecorder.start(250);
         setIsRecording(true);
       };
 
-      // Connect WebSocket if streaming
-      const wsUrl = process.env.NEXT_PUBLIC_API?.replace("http", "ws")?.replace("https", "wss") + "/stream";
+      const api = process.env.NEXT_PUBLIC_API;
+      const wsBase =
+        api?.replace("http", "ws").replace("https", "wss") + "/stream";
+      const wsUrl = wsBase
+        ? `${wsBase}?language=${encodeURIComponent(language)}`
+        : "";
+
       if (wsUrl && !wsUrl.includes("undefined")) {
-          wsRef.current = new WebSocket(wsUrl);
-          
-          wsRef.current.onopen = () => {
-              console.log("WebSocket connected for streaming.");
-              setupAndStartRecorder();
-          };
+        wsRef.current = new WebSocket(wsUrl);
 
-          wsRef.current.onerror = (e) => {
-              console.error("WebSocket Error: ", e);
-              // Fallback: start anyway if WS fails to connect
-              if (!isRecording) setupAndStartRecorder();
-          };
+        wsRef.current.onopen = () => {
+          setupAndStartRecorder();
+        };
 
-          wsRef.current.onmessage = (event) => {
-              console.log("LIVE MESSAGE:", event.data);
-              try {
-                  const data = JSON.parse(event.data);
-                  if (onPartialTranscript) {
-                      onPartialTranscript(data.transcript, data.is_final);
-                  }
-              } catch(e) {
-                  console.error(e);
-              }
-          };
+        wsRef.current.onerror = () => {
+          if (!isRecording) setupAndStartRecorder();
+        };
+
+        wsRef.current.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (onPartialTranscript) {
+              onPartialTranscript(data.transcript, data.is_final);
+            }
+          } catch {
+            /* ignore */
+          }
+        };
       } else {
-         setupAndStartRecorder();
+        setupAndStartRecorder();
       }
-
-    } catch (error) {
-      console.error("Microphone Error:", error);
+    } catch {
       alert("Microphone permission denied.");
     }
   };
 
-  // ⏹ STOP RECORDING
   const stopRecording = () => {
     mediaRecorderRef.current?.stop();
     streamRef.current?.getTracks().forEach((track) => track.stop());
     setIsRecording(false);
   };
 
-  // 📥 DOWNLOAD AUDIO
   const downloadAudio = () => {
     if (!audioUrl) return;
     const a = document.createElement("a");
@@ -125,63 +119,93 @@ export default function RecorderPanel({
     a.click();
   };
 
-  // ⏱ TIMER
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     if (isRecording) {
       interval = setInterval(() => {
-        setTime((prev) => prev + 1);
+        setTime((prev) => {
+          const next = prev + 1;
+          durationRef.current = next;
+          return next;
+        });
       }, 1000);
     } else {
       setTime(0);
+      durationRef.current = 0;
     }
     return () => clearInterval(interval);
   }, [isRecording]);
 
-  return (
-    <div className="p-6 border rounded-xl shadow-md bg-white flex flex-col gap-4">
-      {/* TIMER */}
-      <div className="text-lg font-semibold">
-        ⏱ {time}s {isRecording && "🔴 Recording..."}
-      </div>
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+      if (e.code === "Space" && !e.repeat) {
+        e.preventDefault();
+        if (isRecording) stopRecording();
+        else startRecording();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isRecording]);
 
-      {/* BUTTONS */}
+  return (
+    <section
+      className="p-6 border border-zinc-200 rounded-xl shadow-sm bg-white flex flex-col gap-4"
+      aria-label="Audio recorder"
+    >
+      <div className="text-lg font-semibold" aria-live="polite">
+        <span aria-hidden="true">⏱ </span>
+        {time}s
+        {isRecording && (
+          <span className="ml-2 text-red-600 font-normal">Recording…</span>
+        )}
+      </div>
+      <p className="text-xs text-zinc-500">Tip: press Space to start/stop recording</p>
+
       <div className="flex gap-3 flex-wrap">
         <button
+          type="button"
           onClick={startRecording}
           disabled={isRecording}
-          className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg disabled:opacity-50"
+          className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+          aria-label="Start recording"
         >
           Start
         </button>
 
         <button
+          type="button"
           onClick={stopRecording}
           disabled={!isRecording}
-          className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg disabled:opacity-50"
+          className="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-red-400"
+          aria-label="Stop recording"
         >
           Stop
         </button>
 
         <button
+          type="button"
           onClick={downloadAudio}
           disabled={!audioUrl}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg disabled:opacity-50"
+          className="bg-zinc-700 hover:bg-zinc-600 text-white px-4 py-2 rounded-lg disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-zinc-400"
+          aria-label="Download recorded audio"
         >
-          Download
+          Download audio
         </button>
       </div>
 
-      {/* AUDIO PLAYER */}
       {audioUrl && (
-        <div className="mt-4">
-          <p className="font-medium mb-2">🎵 Recorded Audio (Full):</p>
-          <audio controls className="w-full">
+        <div className="mt-2">
+          <p className="font-medium mb-2 text-sm text-zinc-700">Recorded audio</p>
+          <audio controls className="w-full" aria-label="Playback of last recording">
             <source src={audioUrl} type="audio/webm" />
             Your browser does not support audio playback.
           </audio>
         </div>
       )}
-    </div>
+    </section>
   );
 }
