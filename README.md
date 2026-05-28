@@ -702,7 +702,7 @@ Successfully implemented a real-time streaming architecture with live partial tr
 This phase improves the responsiveness and scalability of the Speech-to-Text application and simulates real-world streaming transcription systems.
 
 
-# 🎙️ Speech-to-Text App — Day 7 Progress
+🎙️ Speech-to-Text App — Day 7 Progress
 
 ---
 
