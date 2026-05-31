@@ -82,16 +82,16 @@ export default function TranscriptPanel({
 
   return (
     <section
-      className="p-6 border border-zinc-200 rounded-xl shadow-sm bg-white mt-6 min-h-[200px]"
+      className="p-6 sm:p-8 border border-border rounded-2xl shadow-sm bg-card mt-6 min-h-[200px]"
       aria-labelledby="transcript-heading"
     >
-      <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+      <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
         <div>
-          <h2 id="transcript-heading" className="text-xl font-bold text-zinc-900">
+          <h2 id="transcript-heading" className="text-xl font-semibold tracking-tight text-foreground">
             Transcript
           </h2>
           {createdAt && (
-            <p className="text-sm text-zinc-500 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               {new Date(createdAt).toLocaleString()}
               {filename ? ` · ${filename}` : ""}
             </p>
@@ -102,7 +102,7 @@ export default function TranscriptPanel({
             <button
               type="button"
               onClick={copyText}
-              className="px-3 py-1.5 text-sm rounded-lg border border-zinc-300 hover:bg-zinc-50"
+              className="px-3 py-2 text-sm rounded-lg border border-border hover:bg-secondary transition-colors duration-200 font-medium"
               aria-label="Copy transcript to clipboard"
               title="Copy (Ctrl+Shift+C)"
             >
@@ -111,7 +111,7 @@ export default function TranscriptPanel({
             <button
               type="button"
               onClick={downloadTxt}
-              className="px-3 py-1.5 text-sm rounded-lg border border-zinc-300 hover:bg-zinc-50"
+              className="px-3 py-2 text-sm rounded-lg border border-border hover:bg-secondary transition-colors duration-200 font-medium"
               aria-label="Download transcript as text file"
             >
               .txt
@@ -120,7 +120,7 @@ export default function TranscriptPanel({
               <button
                 type="button"
                 onClick={downloadDocx}
-                className="px-3 py-1.5 text-sm rounded-lg border border-zinc-300 hover:bg-zinc-50"
+                className="px-3 py-2 text-sm rounded-lg border border-border hover:bg-secondary transition-colors duration-200 font-medium"
                 aria-label="Download transcript as Word document"
               >
                 .docx
@@ -129,7 +129,7 @@ export default function TranscriptPanel({
             <button
               type="button"
               onClick={shareLink}
-              className="px-3 py-1.5 text-sm rounded-lg border border-zinc-300 hover:bg-zinc-50"
+              className="px-3 py-2 text-sm rounded-lg border border-border hover:bg-secondary transition-colors duration-200 font-medium"
               aria-label="Copy share link"
             >
               Share
@@ -137,9 +137,11 @@ export default function TranscriptPanel({
           </div>
         )}
       </div>
-      {shareMsg && <p className="text-sm text-emerald-600 mb-2">{shareMsg}</p>}
+      {shareMsg && (
+        <p className="text-sm text-primary mb-4 font-medium animate-pulse-soft">{shareMsg}</p>
+      )}
       <div
-        className="text-zinc-700 whitespace-pre-wrap leading-relaxed"
+        className="text-foreground whitespace-pre-wrap leading-relaxed text-base"
         tabIndex={0}
         aria-live="polite"
       >

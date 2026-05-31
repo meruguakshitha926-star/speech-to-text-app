@@ -6,8 +6,8 @@ import Link from "next/link";
 import Header from "../../components/Header";
 import { useAuth } from "../../context/AuthContext";
 
-export default function LoginPage() {
-  const { signIn, user, loading } = useAuth();
+export default function RegisterPage() {
+  const { signUp, user, loading } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,7 +23,7 @@ export default function LoginPage() {
     setError("");
     setSubmitting(true);
     try {
-      await signIn(email, password);
+      await signUp(email, password);
       router.push("/history");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -38,10 +38,10 @@ export default function LoginPage() {
       <main className="max-w-md mx-auto p-4 sm:p-6 lg:p-8">
         <div className="bg-card border border-border rounded-2xl shadow-sm p-8">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground mb-2">
-            Sign in
+            Create account
           </h1>
           <p className="text-muted-foreground text-sm mb-6">
-            Sign in to save transcripts privately and view your history.
+            Sign up to save transcripts privately and view your history.
           </p>
           <form onSubmit={onSubmit} className="space-y-5">
             <div>
@@ -66,7 +66,8 @@ export default function LoginPage() {
                 id="password"
                 type="password"
                 required
-                autoComplete="current-password"
+                minLength={6}
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-2.5 border border-border rounded-xl bg-card focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200"
@@ -82,14 +83,14 @@ export default function LoginPage() {
               disabled={submitting}
               className="w-full py-3 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow"
             >
-              {submitting ? "Please wait…" : "Sign in"}
+              {submitting ? "Please wait…" : "Register"}
             </button>
           </form>
           <Link
-            href="/register"
+            href="/login"
             className="mt-6 text-sm text-primary hover:underline w-full text-center font-medium transition-colors block"
           >
-            Need an account? Register
+            Already have an account? Sign in
           </Link>
         </div>
       </main>

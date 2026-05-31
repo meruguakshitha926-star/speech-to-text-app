@@ -30,7 +30,12 @@ export default function HistoryPage() {
     return (
       <div className="min-h-screen">
         <Header />
-        <p className="p-6 text-center text-zinc-600">Loading…</p>
+        <div className="flex items-center justify-center p-12">
+          <div className="flex items-center gap-3">
+            <div className="w-5 h-5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+            <p className="text-muted-foreground">Loading…</p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -38,47 +43,68 @@ export default function HistoryPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-1 max-w-3xl w-full mx-auto p-4 sm:p-6">
-        <h1 className="text-2xl font-bold mb-6">Transcript history</h1>
+      <main className="flex-1 max-w-3xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+        <h1 className="text-2xl font-semibold tracking-tight mb-6">Transcript history</h1>
         {error && (
-          <p className="text-red-600 mb-4" role="alert">
-            {error}
-          </p>
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-xl" role="alert">
+            <p className="text-red-600 dark:text-red-400">{error}</p>
+          </div>
         )}
         {loading ? (
-          <p className="text-zinc-600">Loading transcripts…</p>
+          <div className="flex items-center gap-3">
+            <div className="w-5 h-5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+            <p className="text-muted-foreground">Loading transcripts…</p>
+          </div>
         ) : items.length === 0 ? (
-          <div className="bg-white rounded-xl border border-zinc-200 p-8 text-center">
-            <p className="text-zinc-600 mb-4">No saved transcripts yet.</p>
+          <div className="bg-card border border-border rounded-2xl p-12 text-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-secondary flex items-center justify-center">
+              <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+              </svg>
+            </div>
+            <p className="text-foreground font-medium mb-2">No saved transcripts yet.</p>
+            <p className="text-muted-foreground text-sm mb-6">Start recording to create your first transcript.</p>
             <Link
-              href="/"
-              className="inline-block px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500"
+              href="/record"
+              className="inline-block px-6 py-3 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-medium transition-all duration-200 shadow-sm hover:shadow"
             >
               Record audio
             </Link>
           </div>
         ) : (
-          <ul className="space-y-3" aria-label="Saved transcripts">
+          <ul className="space-y-4" aria-label="Saved transcripts">
             {items.map((item) => (
               <li key={item.id}>
                 <Link
                   href={`/history/${item.id}`}
-                  className="block bg-white rounded-xl border border-zinc-200 p-4 hover:border-emerald-400 hover:shadow-sm transition-all"
+                  className="block bg-card border border-border rounded-2xl p-5 hover:border-primary/50 hover:shadow-md transition-all duration-200 group"
                 >
-                  <div className="flex flex-wrap justify-between gap-2 mb-2">
-                    <span className="font-medium text-zinc-900">
+                  <div className="flex flex-wrap justify-between gap-2 mb-3">
+                    <span className="font-medium text-foreground group-hover:text-primary transition-colors">
                       {item.filename || `Transcript #${item.id}`}
                     </span>
-                    <time className="text-sm text-zinc-500" dateTime={item.created_at}>
+                    <time className="text-sm text-muted-foreground" dateTime={item.created_at}>
                       {new Date(item.created_at).toLocaleString()}
                     </time>
                   </div>
-                  <p className="text-sm text-zinc-600 line-clamp-2">{item.preview}</p>
-                  <div className="mt-2 flex gap-3 text-xs text-zinc-500">
+                  <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{item.preview}</p>
+                  <div className="flex gap-4 text-xs text-muted-foreground">
                     {item.duration_seconds != null && (
-                      <span>{item.duration_seconds}s</span>
+                      <span className="flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        {item.duration_seconds}s
+                      </span>
                     )}
-                    {item.language && <span>{item.language}</span>}
+                    {item.language && (
+                      <span className="flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                        </svg>
+                        {item.language}
+                      </span>
+                    )}
                   </div>
                 </Link>
               </li>
